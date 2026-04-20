@@ -9,17 +9,12 @@ const io = socketIo(server, {
   cors: { origin: "*" }
 });
 
-// WORD DATA
 const words = require("../client/words.json");
 
-// ROOMS STORE
 let rooms = {};
 
 io.on("connection", socket => {
 
-  console.log("User connected:", socket.id);
-
-  // JOIN ROOM
   socket.on("join-room", roomId => {
     socket.join(roomId);
 
@@ -32,13 +27,12 @@ io.on("connection", socket => {
     socket.to(roomId).emit("peer-joined", socket.id);
   });
 
-  // START GAME (SERVER AUTHORITATIVE)
+  // START GAME (SERVER CONTROLLED)
   socket.on("start-game", roomId => {
     const room = rooms[roomId];
     if (!room || room.players.length < 2) return;
 
-    const word =
-      words[Math.floor(Math.random() * words.length)];
+    const word = words[Math.floor(Math.random() * words.length)];
 
     const speaker =
       room.players[Math.floor(Math.random() * room.players.length)];
@@ -69,7 +63,7 @@ io.on("connection", socket => {
     io.to(roomId).emit("win");
   });
 
-  // SIGNAL (WEBRTC)
+  // SIGNAL
   socket.on("signal", ({ to, data }) => {
     io.to(to).emit("signal", { from: socket.id, data });
   });

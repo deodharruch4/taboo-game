@@ -4,6 +4,7 @@
   <title>Taboo Multiplayer</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div class="container">
@@ -14,28 +15,31 @@
 
 <div class="top-bar">
   <input id="room" placeholder="Room ID">
+
   <button onclick="joinRoom()">Join</button>
   <button onclick="startGame()">Start</button>
+
+  <!-- 🔊 SOUND TOGGLE -->
+  <button id="soundBtn" onclick="toggleSound()">🔊 Sound ON</button>
 </div>
 
 <div class="main">
 
-  <!-- LEFT -->
   <div class="left">
 
-    <div class="card">
+    <div class="card glow">
       <h2 id="status">Waiting...</h2>
       <div id="timer">⏱️ 60</div>
     </div>
 
-    <div class="card">
+    <div class="card glow">
       <h3 id="word">Word</h3>
       <p id="taboo">Taboo</p>
     </div>
 
     <div class="card">
       <h3>💡 Current Clue</h3>
-      <p id="currentClue">No clue yet</p>
+      <p id="currentClue">---</p>
     </div>
 
     <div class="inputs">
@@ -48,22 +52,18 @@
       <button onclick="sendGuess()">Guess</button>
     </div>
 
+    <!-- 🔁 RESTART -->
+    <div class="inputs">
+      <button id="restartBtn" onclick="startGame()" style="display:none;">
+        🔁 Restart Game
+      </button>
+    </div>
+
   </div>
 
-  <!-- RIGHT -->
   <div class="right">
 
     <div class="card">
-      <h3>👥 Players</h3>
-      <ul id="players"></ul>
-    </div>
-
-    <div class="card">
-      <h3>🏆 Scores</h3>
-      <ul id="scores"></ul>
-    </div>
-
-    <div class="card chat">
       <h3>💬 Game Feed</h3>
       <ul id="chat"></ul>
     </div>
