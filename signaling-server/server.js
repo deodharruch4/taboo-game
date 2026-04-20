@@ -12,6 +12,7 @@ const io = socketIo(server, {
 const words = require("../client/words.json");
 
 let rooms = {};
+let gameState = {};
 
 io.on("connection", socket => {
 
@@ -27,7 +28,7 @@ io.on("connection", socket => {
     socket.to(roomId).emit("peer-joined", socket.id);
   });
 
-  // START GAME (SERVER CONTROLLED)
+  // 🎮 START GAME
   socket.on("start-game", roomId => {
     const room = rooms[roomId];
     if (!room || room.players.length < 2) return;
@@ -39,6 +40,13 @@ io.on("connection", socket => {
 
     const startTime = Date.now();
 
+    gameState[roomId] = {
+      word,
+      speaker,
+      won: false,
+      startTime
+    };
+
     room.players.forEach(playerId => {
       io.to(playerId).emit("game-start", {
         word,
@@ -48,22 +56,36 @@ io.on("connection", socket => {
     });
   });
 
-  // CLUE
+  // 💡 CLUE
   socket.on("clue", ({ roomId, clue }) => {
     io.to(roomId).emit("clue", clue);
   });
 
-  // GUESS
+  // 🤔 GUESS + WIN LOGIC
   socket.on("guess", ({ roomId, guess }) => {
+    const game = gameState[roomId];
+    if (!game || game.won) return;
+
     io.to(roomId).emit("guess", guess);
+
+    if (
+      guess.toLowerCase() === game.word.word.toLowerCase()
+    ) {
+      game.won = true; // 🔒 LOCK GAME
+
+      io.to(roomId).emit("win", {
+        winner: socket.id
+      });
+    }
   });
 
-  // WIN
-  socket.on("win", roomId => {
-    io.to(roomId).emit("win");
+  // 🔁 RESET GAME
+  socket.on("reset-game", roomId => {
+    gameState[roomId] = null;
+    io.to(roomId).emit("reset-game");
   });
 
-  // SIGNAL
+  // 🌐 WEBRTC SIGNAL
   socket.on("signal", ({ to, data }) => {
     io.to(to).emit("signal", { from: socket.id, data });
   });
