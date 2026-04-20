@@ -9,81 +9,71 @@
 
 <div class="container">
 
-  <!-- HEADER -->
-  <header>
-    <h1>🔥 Taboo Multiplayer</h1>
-  </header>
+<header>
+  <h1>Taboo Multiplayer</h1>
+</header>
 
-  <!-- TOP CONTROLS -->
-  <div class="top-bar">
+<div class="top-bar">
 
-    <input id="room" placeholder="Room ID">
+  <input id="name" placeholder="Your Name">
+  <input id="room" placeholder="Room ID">
 
-    <button onclick="joinRoom()">Join</button>
-    <button onclick="startGame()">Start</button>
+  <button onclick="joinRoom()">Join</button>
+  <button onclick="startGame()">Start</button>
 
-    <button id="soundBtn" onclick="toggleSound()">🔊 Sound ON</button>
+  <button id="soundBtn" onclick="toggleSound()">🔊 Sound ON</button>
 
-  </div>
+  <span id="playerCount">Players: 0</span>
 
-  <!-- STATUS + TIMER -->
-  <div class="card mini-header">
-    <h2 id="status">Waiting...</h2>
-    <div id="timer">⏱️ 60</div>
-  </div>
+</div>
 
-  <!-- BIG CURRENT CLUE (IMPORTANT UX FIX) -->
-  <div class="card big-clue">
-    <h2 id="currentClue">---</h2>
-  </div>
+<div class="card mini-header">
+  <h2 id="status">Waiting...</h2>
+  <div id="timer">⏱️ 60</div>
+</div>
 
-  <div class="main">
+<div class="card big-clue">
+  <h2 id="currentClue">---</h2>
+</div>
 
-    <!-- LEFT SIDE -->
-    <div class="left">
+<div class="main">
 
-      <!-- WORD DISPLAY -->
-      <div class="card glow">
-        <h1 id="word">Word</h1>
-        <p id="taboo">Taboo</p>
-      </div>
+  <div class="left">
 
-      <!-- SPEAKER INPUT -->
-      <div class="inputs" id="clueBox">
-        <input id="clue" placeholder="Enter clue">
-        <button onclick="sendClue()">Send Clue</button>
-      </div>
-
-      <!-- GUESSER INPUT -->
-      <div class="inputs" id="guessBox">
-        <input id="guess" placeholder="Guess word">
-        <button onclick="sendGuess()">Guess</button>
-      </div>
-
-      <!-- RESTART -->
-      <div class="inputs">
-        <button id="restartBtn" onclick="restartGame()" style="display:none;">
-          🔁 Restart Game
-        </button>
-      </div>
-
+    <div class="card glow">
+      <h1 id="word">Word</h1>
+      <p id="taboo">Taboo</p>
     </div>
 
-    <!-- RIGHT SIDE -->
-    <div class="right">
-
-      <div class="card">
-        <h3>💬 Game Feed</h3>
-        <ul id="chat"></ul>
-      </div>
-
+    <div class="inputs" id="clueBox">
+      <input id="clue" placeholder="Enter clue">
+      <button onclick="sendClue()">Send Clue</button>
     </div>
 
+    <div class="inputs" id="guessBox">
+      <input id="guess" placeholder="Guess word">
+      <button onclick="sendGuess()">Guess</button>
+    </div>
+
+    <div class="inputs">
+      <button id="restartBtn" onclick="restartGame()" style="display:none;">
+        🔁 Restart Game
+      </button>
+    </div>
+
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <h3>💬 Game Feed</h3>
+      <ul id="chat"></ul>
+    </div>
   </div>
 
 </div>
 
-<!-- LIBRARIES -->
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script src="script.js"></script>

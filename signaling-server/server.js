@@ -11,48 +11,73 @@ const io = socketIo(server, {
 
 const words = require("../client/words.json");
 
+// ---------------- STATE ----------------
 let rooms = {};
 let gameState = {};
 
+// ---------------- HELPERS ----------------
+function emitRoomUpdate(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  io.to(roomId).emit("room-update", {
+    players: room.players,
+    count: room.players.length
+  });
+}
+
+// ---------------- CONNECTION ----------------
 io.on("connection", socket => {
 
-  socket.on("join-room", roomId => {
+  // 👤 JOIN
+  socket.on("join-room", ({ roomId, name }) => {
+
     socket.join(roomId);
+    socket.data.name = name;
 
     if (!rooms[roomId]) {
       rooms[roomId] = { players: [] };
     }
 
-    if (!rooms[roomId].players.includes(socket.id)) {
-      rooms[roomId].players.push(socket.id);
-    }
+    // avoid duplicates (IMPORTANT FIX)
+    rooms[roomId].players =
+      rooms[roomId].players.filter(p => p.id !== socket.id);
 
-    socket.to(roomId).emit("peer-joined", socket.id);
+    rooms[roomId].players.push({
+      id: socket.id,
+      name
+    });
+
+    emitRoomUpdate(roomId);
   });
 
-  // 🎮 START GAME (NEW ROUND SYSTEM)
+  // 🎮 START GAME (ONLY IF 2+ PLAYERS)
   socket.on("start-game", roomId => {
+
     const room = rooms[roomId];
     if (!room || room.players.length < 2) return;
 
+    const roundId = Date.now();
+
     const word = words[Math.floor(Math.random() * words.length)];
 
-    const speaker =
-      room.players[Math.floor(Math.random() * room.players.length)];
-
-    const roundId = Date.now();
+    // FIXED ROLE ASSIGNMENT (SERVER ONLY DECIDES)
+    const speakerIndex = Math.floor(Math.random() * room.players.length);
+    const speaker = room.players[speakerIndex];
 
     gameState[roomId] = {
       word,
-      speaker,
-      won: false,
-      roundId
+      speakerId: speaker.id,
+      roundId,
+      won: false
     };
 
-    room.players.forEach(playerId => {
-      io.to(playerId).emit("game-start", {
+    // send ROLE PER PLAYER (CRITICAL FIX)
+    room.players.forEach(player => {
+      io.to(player.id).emit("game-start", {
         word,
-        speaker,
+        role: player.id === speaker.id ? "speaker" : "guesser",
+        speaker: speaker.id,
         startTime: Date.now(),
         roundId
       });
@@ -61,33 +86,53 @@ io.on("connection", socket => {
 
   // 💡 CLUE
   socket.on("clue", ({ roomId, clue }) => {
-    io.to(roomId).emit("clue", clue);
+    io.to(roomId).emit("clue", {
+      clue,
+      by: socket.data.name
+    });
   });
 
   // 🤔 GUESS + WIN LOCK
   socket.on("guess", ({ roomId, guess }) => {
+
     const game = gameState[roomId];
     if (!game || game.won) return;
 
-    io.to(roomId).emit("guess", guess);
+    io.to(roomId).emit("guess", {
+      guess,
+      by: socket.data.name
+    });
 
     if (guess.toLowerCase() === game.word.word.toLowerCase()) {
+
       game.won = true;
 
       io.to(roomId).emit("win", {
-        winner: socket.id,
+        winner: socket.data.name,
         roundId: game.roundId
       });
     }
   });
 
-  // 🔁 RESET GAME
+  // 🔁 RESET
   socket.on("reset-game", roomId => {
     gameState[roomId] = null;
     io.to(roomId).emit("reset-game");
   });
 
+  // 👋 DISCONNECT
+  socket.on("disconnect", () => {
+
+    for (let roomId in rooms) {
+
+      rooms[roomId].players =
+        rooms[roomId].players.filter(p => p.id !== socket.id);
+
+      emitRoomUpdate(roomId);
+    }
+  });
 });
+
 server.listen(3000, () =>
   console.log("Server running on port 3000")
 );

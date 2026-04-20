@@ -1,57 +1,62 @@
 const socket = io("https://taboo-game-l02a.onrender.com");
 
 let roomId = "";
-let currentRoundId = null;
 let myRole = null;
+let currentRoundId = null;
 
 let timerInterval;
 let soundEnabled = true;
 window.gameEnded = false;
 
-// ---------------- JOIN ROOM ----------------
+// ---------------- JOIN ----------------
 function joinRoom() {
   roomId = document.getElementById("room").value;
-  socket.emit("join-room", roomId);
+  const name = document.getElementById("name").value;
+
+  socket.emit("join-room", { roomId, name });
 }
 
-// ---------------- START GAME ----------------
+// ---------------- START ----------------
 function startGame() {
   socket.emit("start-game", roomId);
 }
 
-// ---------------- SOUND TOGGLE ----------------
+// ---------------- SOUND ----------------
 function toggleSound() {
   soundEnabled = !soundEnabled;
-
   document.getElementById("soundBtn").innerText =
     soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
 }
 
 function playSound(url) {
   if (!soundEnabled) return;
-  const audio = new Audio(url);
-  audio.play().catch(() => {});
+  new Audio(url).play().catch(() => {});
 }
 
-// ---------------- GAME START ----------------
-socket.on("game-start", ({ word, speaker, startTime, roundId }) => {
+// ---------------- ROOM UPDATE ----------------
+socket.on("room-update", ({ count, players }) => {
+  document.getElementById("playerCount").innerText =
+    "Players: " + count;
+});
 
-  // prevent stale rounds
+// ---------------- GAME START ----------------
+socket.on("game-start", ({ word, role, startTime, roundId }) => {
+
   if (currentRoundId === roundId) return;
   currentRoundId = roundId;
 
   window.gameEnded = false;
   document.getElementById("restartBtn").style.display = "none";
 
-  const isSpeaker = socket.id === speaker;
-  myRole = isSpeaker ? "speaker" : "guesser";
+  myRole = role; // 🔥 SERVER DECIDES ROLE
 
-  // reset UI
   document.getElementById("chat").innerHTML = "";
   document.getElementById("currentClue").innerText = "---";
 
-  // word display
-  if (isSpeaker) {
+  document.getElementById("status").innerText =
+    role.toUpperCase();
+
+  if (role === "speaker") {
     document.getElementById("word").innerText = word.word;
     document.getElementById("taboo").innerText =
       "❌ " + word.taboo.join(" | ");
@@ -60,15 +65,12 @@ socket.on("game-start", ({ word, speaker, startTime, roundId }) => {
     document.getElementById("taboo").innerText = "Guess the word!";
   }
 
-  document.getElementById("status").innerText =
-    isSpeaker ? "SPEAKER" : "GUESSER";
-
-  // ---------------- ROLE UI FIX (IMPORTANT) ----------------
+  // ROLE UI FIX
   document.getElementById("clueBox").style.display =
-    myRole === "speaker" ? "flex" : "none";
+    role === "speaker" ? "flex" : "none";
 
   document.getElementById("guessBox").style.display =
-    myRole === "guesser" ? "flex" : "none";
+    role === "guesser" ? "flex" : "none";
 
   syncTimer(startTime);
 });
@@ -84,54 +86,36 @@ function syncTimer(startTime) {
       return;
     }
 
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const remaining = 60 - elapsed;
+    const remaining = 60 - Math.floor((Date.now() - startTime) / 1000);
 
     document.getElementById("timer").innerText = "⏱️ " + remaining;
 
-    if (remaining <= 0) {
-      clearInterval(timerInterval);
-    }
+    if (remaining <= 0) clearInterval(timerInterval);
 
   }, 1000);
 }
 
-// ---------------- SEND CLUE ----------------
+// ---------------- CLUE ----------------
 function sendClue() {
   if (myRole !== "speaker") return;
 
-  const input = document.getElementById("clue");
-  const clue = input.value.trim();
+  const clue = document.getElementById("clue").value.trim();
   if (!clue) return;
 
   socket.emit("clue", { roomId, clue });
-  input.value = "";
 }
 
-// ---------------- SEND GUESS ----------------
+// ---------------- GUESS ----------------
 function sendGuess() {
   if (myRole !== "guesser") return;
 
-  const input = document.getElementById("guess");
-  const guess = input.value.trim();
+  const guess = document.getElementById("guess").value.trim();
   if (!guess) return;
 
   socket.emit("guess", { roomId, guess });
-  input.value = "";
 }
 
-// ---------------- RECEIVE CLUE ----------------
-socket.on("clue", clue => {
-  document.getElementById("chat").innerHTML += `<li>💡 ${clue}</li>`;
-  document.getElementById("currentClue").innerText = clue;
-});
-
-// ---------------- RECEIVE GUESS ----------------
-socket.on("guess", guess => {
-  document.getElementById("chat").innerHTML += `<li>🤔 ${guess}</li>`;
-});
-
-// ---------------- WIN EVENT ----------------
+// ---------------- WIN ----------------
 socket.on("win", ({ winner, roundId }) => {
 
   if (window.gameEnded || roundId !== currentRoundId) return;
@@ -148,13 +132,16 @@ socket.on("win", ({ winner, roundId }) => {
   document.getElementById("restartBtn").style.display = "block";
 });
 
-// ---------------- RESTART GAME ----------------
+// ---------------- RESTART ----------------
 function restartGame() {
   socket.emit("reset-game", roomId);
-  socket.emit("start-game", roomId);
+
+  setTimeout(() => {
+    socket.emit("start-game", roomId);
+  }, 300);
 }
 
-// ---------------- RESET GAME ----------------
+// ---------------- RESET ----------------
 socket.on("reset-game", () => {
 
   window.gameEnded = false;
@@ -171,19 +158,6 @@ socket.on("reset-game", () => {
 
   document.getElementById("restartBtn").style.display = "none";
 
-  // hide inputs until new role assigned
   document.getElementById("clueBox").style.display = "none";
   document.getElementById("guessBox").style.display = "none";
-});
-
-// ---------------- ENTER KEY SUPPORT ----------------
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-
-    const clueInput = document.getElementById("clue");
-    const guessInput = document.getElementById("guess");
-
-    if (document.activeElement === clueInput) sendClue();
-    if (document.activeElement === guessInput) sendGuess();
-  }
 });
