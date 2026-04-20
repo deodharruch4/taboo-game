@@ -1,7 +1,6 @@
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
-const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
@@ -10,13 +9,17 @@ const io = socketIo(server, {
   cors: { origin: "*" }
 });
 
-// load words
+// WORD DATA
 const words = require("../client/words.json");
 
+// ROOMS STORE
 let rooms = {};
 
 io.on("connection", socket => {
 
+  console.log("User connected:", socket.id);
+
+  // JOIN ROOM
   socket.on("join-room", roomId => {
     socket.join(roomId);
 
@@ -27,39 +30,52 @@ io.on("connection", socket => {
     rooms[roomId].players.push(socket.id);
 
     socket.to(roomId).emit("peer-joined", socket.id);
-
-    console.log(`User joined room ${roomId}`);
   });
 
-  // 🔥 START GAME (SERVER CONTROLS EVERYTHING)
+  // START GAME (SERVER AUTHORITATIVE)
   socket.on("start-game", roomId => {
     const room = rooms[roomId];
-    if (!room) return;
+    if (!room || room.players.length < 2) return;
 
-    // pick random word
-    const word = words[Math.floor(Math.random() * words.length)];
+    const word =
+      words[Math.floor(Math.random() * words.length)];
 
-    // pick random speaker
     const speaker =
       room.players[Math.floor(Math.random() * room.players.length)];
 
     const startTime = Date.now();
 
-    // send role-specific data
     room.players.forEach(playerId => {
       io.to(playerId).emit("game-start", {
-        word: playerId === speaker ? word : null,
-        isSpeaker: playerId === speaker,
+        word,
+        speaker,
         startTime
       });
     });
   });
 
-  // relay signals (WebRTC)
+  // CLUE
+  socket.on("clue", ({ roomId, clue }) => {
+    io.to(roomId).emit("clue", clue);
+  });
+
+  // GUESS
+  socket.on("guess", ({ roomId, guess }) => {
+    io.to(roomId).emit("guess", guess);
+  });
+
+  // WIN
+  socket.on("win", roomId => {
+    io.to(roomId).emit("win");
+  });
+
+  // SIGNAL (WEBRTC)
   socket.on("signal", ({ to, data }) => {
     io.to(to).emit("signal", { from: socket.id, data });
   });
 
 });
-  
-server.listen(3000, () => console.log("Server running on port 3000"));
+
+server.listen(3000, () =>
+  console.log("Server running on port 3000")
+);

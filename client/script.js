@@ -1,12 +1,11 @@
 const socket = io("https://taboo-game-l02a.onrender.com"); 
 
+let roomId = "";
+let currentWord = null;
+let myRole = "guesser";
 
 let peers = {};
 let channels = {};
-let roomId = "";
-
-let currentWord = null;
-let myRole = "guesser";
 
 let time = 60;
 let timerInterval;
@@ -19,16 +18,18 @@ function joinRoom() {
   socket.emit("join-room", roomId);
 }
 
-// START GAME (server decides everything)
+// START GAME (ONLY TRIGGERS SERVER)
 function startGame() {
   socket.emit("start-game", roomId);
 }
 
-// RECEIVE GAME START
-socket.on("game-start", ({ word, isSpeaker, startTime }) => {
+// GAME START (SERVER CONTROLLED)
+socket.on("game-start", ({ word, speaker, startTime }) => {
 
-  currentWord = word;
+  const isSpeaker = socket.id === speaker;
+
   myRole = isSpeaker ? "speaker" : "guesser";
+  currentWord = word;
 
   if (isSpeaker) {
     document.getElementById("word").innerText = word.word;
@@ -45,7 +46,7 @@ socket.on("game-start", ({ word, isSpeaker, startTime }) => {
   syncTimer(startTime);
 });
 
-// 🔥 PERFECT TIMER SYNC
+// 🔥 SYNCED TIMER
 function syncTimer(startTime) {
   clearInterval(timerInterval);
 
@@ -53,7 +54,8 @@ function syncTimer(startTime) {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     const remaining = 60 - elapsed;
 
-    document.getElementById("timer").innerText = "⏱️ " + remaining;
+    document.getElementById("timer").innerText =
+      "⏱️ " + remaining;
 
     if (remaining <= 10) {
       document.getElementById("timer").style.color = "#ef4444";
@@ -66,18 +68,20 @@ function syncTimer(startTime) {
   }, 1000);
 }
 
-// SEND CLUE
+// CLUE
 function sendClue() {
-  if (myRole !== "speaker") return alert("Only speaker can give clue");
+  if (myRole !== "speaker")
+    return alert("Only speaker can give clue");
 
   const clue = document.getElementById("clue").value;
 
   socket.emit("clue", { roomId, clue });
 }
 
-// SEND GUESS
+// GUESS
 function sendGuess() {
-  if (myRole !== "guesser") return alert("Only guesser can guess");
+  if (myRole !== "guesser")
+    return alert("Only guesser can guess");
 
   const guess = document.getElementById("guess").value;
 
@@ -85,34 +89,32 @@ function sendGuess() {
 }
 
 // RECEIVE CLUE
-socket.on("clue", data => {
-  document.getElementById("currentClue").innerText = data;
+socket.on("clue", clue => {
+  document.getElementById("currentClue").innerText = clue;
 
-  const chat = document.getElementById("chat");
-  chat.innerHTML += `<li>💡 ${data}</li>`;
+  document.getElementById("chat").innerHTML +=
+    `<li>💡 ${clue}</li>`;
 });
 
 // RECEIVE GUESS
 socket.on("guess", guess => {
-  const chat = document.getElementById("chat");
-  chat.innerHTML += `<li>🤔 ${guess}</li>`;
+  document.getElementById("chat").innerHTML +=
+    `<li>🤔 ${guess}</li>`;
 
-  if (currentWord && guess.toLowerCase() === currentWord.word.toLowerCase()) {
+  if (
+    currentWord &&
+    guess.toLowerCase() === currentWord.word.toLowerCase()
+  ) {
     socket.emit("win", roomId);
   }
 });
 
-// WIN EVENT
+// WIN
 socket.on("win", () => {
-  celebrate();
-});
-
-// 🎉 EFFECTS
-function celebrate() {
   confetti();
 
   const audio = new Audio(
     "https://www.soundjay.com/buttons/sounds/button-3.mp3"
   );
   audio.play().catch(() => {});
-}
+});
