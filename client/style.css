@@ -1,2 +1,56 @@
-body { text-align: center; font-family: Arial; }
-input, button { margin: 5px; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+}
+
+.container { padding: 20px; }
+
+header { text-align: center; }
+
+.top-bar {
+  text-align: center;
+  margin: 20px 0;
+}
+
+button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  background: #6366f1;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover { background: #4f46e5; }
+
+input {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  margin-right: 5px;
+}
+
+.main { display: flex; gap: 20px; }
+
+.left { flex: 2; }
+.right { flex: 1; }
+
+.card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.chat {
+  height: 250px;
+  overflow-y: auto;
+}
+
+#timer {
+  font-size: 24px;
+  margin-top: 10px;
+}

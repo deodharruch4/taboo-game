@@ -1,26 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Taboo Game</title>
+  <title>Taboo Multiplayer</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Taboo Game (P2P)</h1>
+<div class="container">
+  <header>
+    <h1>🔥 Taboo Multiplayer</h1>
+  </header>
 
-<input id="room" placeholder="Room ID">
-<button onclick="joinRoom()">Join</button>
-<button onclick="startGame()">Start</button>
+  <div class="top-bar">
+    <input id="room" placeholder="Room ID">
+    <button onclick="joinRoom()">Join</button>
+    <button onclick="startGame()">Start</button>
+  </div>
 
-<h2 id="word"></h2>
+  <div class="main">
 
-<input id="clue" placeholder="Clue">
-<button onclick="sendClue()">Send Clue</button>
+    <!-- LEFT -->
+    <div class="left">
+      <div class="card">
+        <h2 id="status">Waiting...</h2>
+        <div id="timer">⏱️ 30</div>
+      </div>
 
-<input id="guess" placeholder="Guess">
-<button onclick="sendGuess()">Guess</button>
+      <div class="card">
+        <h3 id="word">Word</h3>
+        <p id="taboo">Taboo</p>
+      </div>
 
-<ul id="chat"></ul>
+      <div class="inputs">
+        <input id="clue" placeholder="Enter clue">
+        <button onclick="sendClue()">Send</button>
+      </div>
 
+      <div class="inputs">
+        <input id="guess" placeholder="Guess word">
+        <button onclick="sendGuess()">Guess</button>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <div class="card">
+        <h3>👥 Players</h3>
+        <ul id="players"></ul>
+      </div>
+
+      <div class="card">
+        <h3>🏆 Scores</h3>
+        <ul id="scores"></ul>
+      </div>
+
+      <div class="card chat">
+        <h3>💬 Game Feed</h3>
+        <ul id="chat"></ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script src="script.js"></script>
 
