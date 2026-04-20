@@ -8,9 +8,10 @@ let words = [];
 let usedWords = [];
 let currentWord = null;
 
+let myRole = "guesser";
 let players = [];
 let scores = {};
-let myRole = "guesser"; // default
+
 let time = 60;
 let timerInterval;
 
@@ -30,7 +31,7 @@ function joinRoom() {
   updatePlayers(name);
 }
 
-// START GAME
+// START GAME (only initiator triggers timer)
 function startGame() {
   if (words.length === 0) return alert("Words not loaded");
 
@@ -41,20 +42,21 @@ function startGame() {
 
   usedWords.push(currentWord.word);
 
-  // randomly assign speaker
+  // assign role
   myRole = Math.random() > 0.5 ? "speaker" : "guesser";
 
   broadcast({
     type: "start",
     data: currentWord,
-    role: myRole
+    role: myRole,
+    startTime: Date.now() // 🔥 sync timer
   });
 
   applyStart(currentWord, myRole);
-  startTimer();
+  syncTimer(Date.now());
 }
 
-// APPLY START (role-based UI)
+// APPLY ROLE UI
 function applyStart(word, role) {
   if (role === "speaker") {
     document.getElementById("word").innerText = word.word;
@@ -68,23 +70,28 @@ function applyStart(word, role) {
   document.getElementById("status").innerText = role.toUpperCase();
 }
 
-// TIMER
-function startTimer() {
-  time = 60;
+// 🔥 SYNC TIMER (same for all)
+function syncTimer(startTime) {
   clearInterval(timerInterval);
 
   timerInterval = setInterval(() => {
-    time--;
-    document.getElementById("timer").innerText = "⏱️ " + time;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const remaining = 60 - elapsed;
 
-    if (time <= 0) {
+    document.getElementById("timer").innerText = "⏱️ " + remaining;
+
+    if (remaining <= 10) {
+      document.getElementById("timer").style.color = "#ef4444";
+    }
+
+    if (remaining <= 0) {
       clearInterval(timerInterval);
       alert("⏰ Time up!");
     }
   }, 1000);
 }
 
-// CLUE
+// CLUE (everyone sees)
 function sendClue() {
   if (myRole !== "speaker") return alert("Only speaker can give clue");
 
@@ -96,10 +103,9 @@ function sendClue() {
   }
 
   broadcast({ type: "clue", data: clue });
-  document.getElementById("currentClue").innerText = clue;
 }
 
-// GUESS
+// GUESS (everyone sees)
 function sendGuess() {
   if (myRole !== "guesser") return alert("Only guesser can guess");
 
@@ -110,7 +116,9 @@ function sendGuess() {
 // BROADCAST
 function broadcast(msg) {
   Object.values(channels).forEach(c => {
-    if (c.readyState === "open") c.send(JSON.stringify(msg));
+    if (c.readyState === "open") {
+      c.send(JSON.stringify(msg));
+    }
   });
 }
 
@@ -120,10 +128,12 @@ function handleMessage(msg) {
 
   if (msg.type === "start") {
     currentWord = msg.data;
-    myRole = msg.role === "speaker" ? "guesser" : "speaker"; // reverse role
+
+    // reverse role for others
+    myRole = msg.role === "speaker" ? "guesser" : "speaker";
 
     applyStart(currentWord, myRole);
-    startTimer();
+    syncTimer(msg.startTime); // 🔥 FIXED TIMER
   }
 
   if (msg.type === "clue") {
@@ -149,6 +159,7 @@ function handleMessage(msg) {
 // PLAYERS
 function updatePlayers(name) {
   players.push(name);
+
   document.getElementById("players").innerHTML =
     players.map(p => `<li>${p}</li>`).join("");
 }
@@ -163,11 +174,14 @@ function updateScore(player) {
       .map(([p,s]) => `<li>${p}: ${s}</li>`).join("");
 }
 
-// EFFECTS
+// EFFECTS (now synced)
 function celebrate() {
   confetti();
-  const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
-  audio.play().catch(() => {}); // avoids browser block
+
+  const audio = new Audio(
+    "https://www.soundjay.com/buttons/sounds/button-3.mp3"
+  );
+  audio.play().catch(() => {});
 }
 
 // ================= WEBRTC =================
