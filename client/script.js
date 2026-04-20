@@ -8,22 +8,54 @@ let timerInterval;
 let soundEnabled = true;
 window.gameEnded = false;
 
-// ---------------- JOIN ROOM ----------------
+// ============ CONNECTION STATUS ============
+socket.on("connect", () => {
+  console.log("✅ Connected to server");
+  document.body.style.borderTop = "3px solid #4CAF50";
+});
+
+socket.on("disconnect", () => {
+  console.log("❌ Disconnected from server");
+  document.body.style.borderTop = "3px solid #f44336";
+  alert("⚠️ Connection lost. Please refresh the page.");
+});
+
+socket.on("connect_error", (error) => {
+  console.error("❌ Connection error:", error);
+  alert("⚠️ Failed to connect to server. Check console for details.");
+});
+
+// ============ DEBUG LOGGING ============
+function logDebug(message) {
+  console.log(`[TABOO] ${message}`);
+}
+
+// ============ JOIN ROOM ============
 function joinRoom() {
   roomId = document.getElementById("room").value;
   const name = document.getElementById("name").value;
 
-  if (!roomId || !name) return;
+  if (!roomId || !name) {
+    alert("Please enter both name and room ID");
+    return;
+  }
 
+  logDebug(`Attempting to join room: ${roomId} as ${name}`);
   socket.emit("join-room", { roomId, name });
 }
 
-// ---------------- START GAME ----------------
+// ============ START GAME ============
 function startGame() {
+  if (!roomId) {
+    alert("Please join a room first");
+    return;
+  }
+
+  logDebug(`Starting game in room: ${roomId}`);
   socket.emit("start-game", roomId);
 }
 
-// ---------------- SOUND ----------------
+// ============ SOUND ============
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById("soundBtn").innerText =
@@ -35,17 +67,20 @@ function playSound(url) {
   new Audio(url).play().catch(() => {});
 }
 
-// ---------------- ROOM UPDATE ----------------
+// ============ ROOM UPDATE ============
 socket.on("room-update", ({ count }) => {
+  logDebug(`Room updated: ${count} players`);
   document.getElementById("playerCount").innerText =
     "Players: " + count;
 });
 
-// ---------------- GAME START ----------------
+// ============ GAME START ============
 socket.on("game-start", ({ word, role, startTime, roundId }) => {
 
   if (currentRoundId === roundId) return;
   currentRoundId = roundId;
+
+  logDebug(`Game started! Role: ${role}`);
 
   window.gameEnded = false;
   document.getElementById("restartBtn").style.display = "none";
@@ -78,7 +113,7 @@ socket.on("game-start", ({ word, role, startTime, roundId }) => {
   syncTimer(startTime);
 });
 
-// ---------------- TIMER ----------------
+// ============ TIMER ============
 function syncTimer(startTime) {
   clearInterval(timerInterval);
 
@@ -98,7 +133,7 @@ function syncTimer(startTime) {
   }, 1000);
 }
 
-// ---------------- CLUE ----------------
+// ============ CLUE ============
 function sendClue() {
   if (myRole !== "speaker") return;
 
@@ -106,11 +141,12 @@ function sendClue() {
   const clue = input.value.trim();
   if (!clue) return;
 
+  logDebug(`Sending clue: ${clue}`);
   socket.emit("clue", { roomId, clue });
   input.value = "";
 }
 
-// ---------------- GUESS ----------------
+// ============ GUESS ============
 function sendGuess() {
   if (myRole !== "guesser") return;
 
@@ -118,11 +154,12 @@ function sendGuess() {
   const guess = input.value.trim();
   if (!guess) return;
 
+  logDebug(`Sending guess: ${guess}`);
   socket.emit("guess", { roomId, guess });
   input.value = "";
 }
 
-// ---------------- RECEIVE CLUE ----------------
+// ============ RECEIVE CLUE ============
 socket.on("clue", ({ clue, by }) => {
 
   document.getElementById("currentClue").innerText = clue;
@@ -131,20 +168,22 @@ socket.on("clue", ({ clue, by }) => {
     `<li>💡 ${by}: ${clue}</li>`;
 });
 
-// ---------------- RECEIVE GUESS ----------------
+// ============ RECEIVE GUESS ============
 socket.on("guess", ({ guess, by }) => {
 
   document.getElementById("chat").innerHTML +=
     `<li>🤔 ${by}: ${guess}</li>`;
 });
 
-// ---------------- WIN ----------------
+// ============ WIN ============
 socket.on("win", ({ winner, roundId }) => {
 
   if (window.gameEnded || roundId !== currentRoundId) return;
 
   window.gameEnded = true;
   clearInterval(timerInterval);
+
+  logDebug(`Game won by: ${winner}`);
 
   confetti();
   playSound("https://www.soundjay.com/buttons/sounds/button-3.mp3");
@@ -155,8 +194,9 @@ socket.on("win", ({ winner, roundId }) => {
   document.getElementById("restartBtn").style.display = "block";
 });
 
-// ---------------- RESTART ----------------
+// ============ RESTART ============
 function restartGame() {
+  logDebug(`Restarting game in room: ${roomId}`);
   socket.emit("reset-game", roomId);
 
   setTimeout(() => {
@@ -164,12 +204,14 @@ function restartGame() {
   }, 300);
 }
 
-// ---------------- RESET GAME ----------------
+// ============ RESET GAME ============
 socket.on("reset-game", () => {
 
   window.gameEnded = false;
   currentRoundId = null;
   myRole = null;
+
+  logDebug("Game reset");
 
   document.getElementById("chat").innerHTML = "";
   document.getElementById("currentClue").innerText = "No clue yet";
@@ -185,7 +227,7 @@ socket.on("reset-game", () => {
   document.getElementById("guessBox").style.display = "none";
 });
 
-// ---------------- ENTER KEY ----------------
+// ============ ENTER KEY ============
 document.addEventListener("keydown", e => {
 
   if (e.key !== "Enter") return;
