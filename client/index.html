@@ -7,60 +7,71 @@
 <body>
 
 <div class="container">
-  <header>
-    <h1>🔥 Taboo Multiplayer</h1>
-  </header>
 
-  <div class="top-bar">
-    <input id="room" placeholder="Room ID">
-    <button onclick="joinRoom()">Join</button>
-    <button onclick="startGame()">Start</button>
-  </div>
+<header>
+  <h1>🔥 Taboo Multiplayer</h1>
+</header>
 
-  <div class="main">
+<div class="top-bar">
+  <input id="room" placeholder="Room ID">
+  <button onclick="joinRoom()">Join</button>
+  <button onclick="startGame()">Start</button>
+</div>
 
-    <!-- LEFT -->
-    <div class="left">
-      <div class="card">
-        <h2 id="status">Waiting...</h2>
-        <div id="timer">⏱️ 60</div>
-      </div>
+<div class="main">
 
-      <div class="card">
-        <h3 id="word">Word</h3>
-        <p id="taboo">Taboo</p>
-      </div>
+  <!-- LEFT -->
+  <div class="left">
 
-      <div class="inputs">
-        <input id="clue" placeholder="Enter clue">
-        <button onclick="sendClue()">Send</button>
-      </div>
-
-      <div class="inputs">
-        <input id="guess" placeholder="Guess word">
-        <button onclick="sendGuess()">Guess</button>
-      </div>
+    <div class="card">
+      <h2 id="status">Waiting...</h2>
+      <div id="timer">⏱️ 60</div>
     </div>
 
-    <!-- RIGHT -->
-    <div class="right">
-      <div class="card">
-        <h3>👥 Players</h3>
-        <ul id="players"></ul>
-      </div>
+    <div class="card">
+      <h3 id="word">Word</h3>
+      <p id="taboo">Taboo</p>
+    </div>
 
-      <div class="card">
-        <h3>🏆 Scores</h3>
-        <ul id="scores"></ul>
-      </div>
+    <div class="card">
+      <h3>💡 Current Clue</h3>
+      <p id="currentClue">No clue yet</p>
+    </div>
 
-      <div class="card chat">
-        <h3>💬 Game Feed</h3>
-        <ul id="chat"></ul>
-      </div>
+    <div class="inputs">
+      <input id="clue" placeholder="Enter clue">
+      <button onclick="sendClue()">Send</button>
+    </div>
+
+    <div class="inputs">
+      <input id="guess" placeholder="Guess word">
+      <button onclick="sendGuess()">Guess</button>
     </div>
 
   </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+
+    <div class="card">
+      <h3>👥 Players</h3>
+      <ul id="players"></ul>
+    </div>
+
+    <div class="card">
+      <h3>🏆 Scores</h3>
+      <ul id="scores"></ul>
+    </div>
+
+    <div class="card chat">
+      <h3>💬 Game Feed</h3>
+      <ul id="chat"></ul>
+    </div>
+
+  </div>
+
+</div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
