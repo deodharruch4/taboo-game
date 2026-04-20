@@ -6,20 +6,21 @@ let myRole = "guesser";
 
 let timerInterval;
 let soundEnabled = true;
+let gameActive = false;
 
-// JOIN
+// ---------------- JOIN ----------------
 function joinRoom() {
   roomId = document.getElementById("room").value;
   socket.emit("join-room", roomId);
 }
 
-// START
+// ---------------- START ----------------
 function startGame() {
   document.getElementById("restartBtn").style.display = "none";
   socket.emit("start-game", roomId);
 }
 
-// SOUND TOGGLE
+// ---------------- SOUND ----------------
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById("soundBtn").innerText =
@@ -32,8 +33,10 @@ function playSound(url) {
   audio.play().catch(() => {});
 }
 
-// GAME START
+// ---------------- GAME START ----------------
 socket.on("game-start", ({ word, speaker, startTime }) => {
+
+  gameActive = true;
 
   const isSpeaker = socket.id === speaker;
   myRole = isSpeaker ? "speaker" : "guesser";
@@ -54,47 +57,93 @@ socket.on("game-start", ({ word, speaker, startTime }) => {
   syncTimer(startTime);
 });
 
-// TIMER
+// ---------------- TIMER (FIXED STOP ON WIN) ----------------
 function syncTimer(startTime) {
   clearInterval(timerInterval);
 
   timerInterval = setInterval(() => {
+
+    if (!gameActive) return clearInterval(timerInterval);
+
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     const remaining = 60 - elapsed;
 
     document.getElementById("timer").innerText = "⏱️ " + remaining;
 
-    if (remaining <= 0) clearInterval(timerInterval);
+    if (remaining <= 0) {
+      gameActive = false;
+      clearInterval(timerInterval);
+      alert("⏰ Time up!");
+    }
   }, 1000);
 }
 
-// CLUE
+// ---------------- CLUE ----------------
 function sendClue() {
-  socket.emit("clue", { roomId, clue: document.getElementById("clue").value });
+  const input = document.getElementById("clue");
+  const clue = input.value.trim();
+
+  if (!clue) return;
+
+  socket.emit("clue", { roomId, clue });
+
+  input.value = ""; // 🔥 CLEAR INPUT
 }
 
-// GUESS
+// ---------------- GUESS ----------------
 function sendGuess() {
-  socket.emit("guess", { roomId, guess: document.getElementById("guess").value });
+  const input = document.getElementById("guess");
+  const guess = input.value.trim();
+
+  if (!guess) return;
+
+  socket.emit("guess", { roomId, guess });
+
+  input.value = ""; // 🔥 CLEAR INPUT
 }
 
-// CLUE RECEIVE
+// ---------------- ENTER KEY SUPPORT ----------------
+document.addEventListener("keydown", (e) => {
+
+  if (e.key === "Enter") {
+
+    const clueInput = document.getElementById("clue");
+    const guessInput = document.getElementById("guess");
+
+    if (document.activeElement === clueInput) {
+      sendClue();
+    }
+
+    if (document.activeElement === guessInput) {
+      sendGuess();
+    }
+  }
+});
+
+// ---------------- RECEIVE CLUE ----------------
 socket.on("clue", clue => {
   document.getElementById("chat").innerHTML += `<li>💡 ${clue}</li>`;
   document.getElementById("currentClue").innerText = clue;
 });
 
-// GUESS RECEIVE
+// ---------------- RECEIVE GUESS ----------------
 socket.on("guess", guess => {
   document.getElementById("chat").innerHTML += `<li>🤔 ${guess}</li>`;
 
-  if (currentWord && guess.toLowerCase() === currentWord.word.toLowerCase()) {
+  if (
+    currentWord &&
+    guess.toLowerCase() === currentWord.word.toLowerCase()
+  ) {
     socket.emit("win", roomId);
   }
 });
 
-// WIN
+// ---------------- WIN (FIX TIMER STOP) ----------------
 socket.on("win", () => {
+
+  gameActive = false; // 🔥 STOP TIMER
+
+  clearInterval(timerInterval);
 
   confetti();
   playSound("https://www.soundjay.com/buttons/sounds/button-3.mp3");
