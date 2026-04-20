@@ -1,4 +1,4 @@
-const socket = io("https://taboo-game.onrender.com");
+const socket = io("https://taboo-game-l02a.onrender.com");
 
 let roomId = "";
 let myRole = null;
