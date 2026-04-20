@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Taboo Game</title>
+</head>
+<body>
+
+<h1>Taboo Game (P2P)</h1>
+
+<input id="room" placeholder="Room ID">
+<button onclick="joinRoom()">Join</button>
+<button onclick="startGame()">Start</button>
+
+<h2 id="word"></h2>
+
+<input id="clue" placeholder="Clue">
+<button onclick="sendClue()">Send Clue</button>
+
+<input id="guess" placeholder="Guess">
+<button onclick="sendGuess()">Guess</button>
+
+<ul id="chat"></ul>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
