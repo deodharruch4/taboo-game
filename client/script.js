@@ -10,7 +10,7 @@ let currentWord = null;
 
 let players = [];
 let scores = {};
-let time = 30;
+let time = 60;
 let timerInterval;
 
 // LOAD WORDS
@@ -95,12 +95,16 @@ function startGame() {
 
 // TIMER
 function startTimer() {
-  time = 30;
+  time = 60;
   clearInterval(timerInterval);
 
   timerInterval = setInterval(() => {
     time--;
     document.getElementById("timer").innerText = "⏱️ " + time;
+
+    if (time <= 10) {
+      document.getElementById("timer").style.color = "#ef4444"; // red warning
+    }
 
     if (time <= 0) {
       clearInterval(timerInterval);
