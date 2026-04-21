@@ -76,28 +76,40 @@ io.on("connection", socket => {
 
   // ---------------- CLUE ----------------
   socket.on("clue", ({ roomId, clue }) => {
-    const game = gameState[roomId];
-    if (!game || game.won || game.ended) return;
 
-    const normalizedClue = clue.toLowerCase();
-    const tabooWords = game.word.taboo.map(w => w.toLowerCase());
+  const game = gameState[roomId];
+  if (!game || game.won || game.ended) return;
 
-    const violated = tabooWords.find(taboo =>
-      normalizedClue.includes(taboo)
-    );
+  const normalizedClue = clue.toLowerCase().trim();
 
-    if (violated) {
-      io.to(roomId).emit("system", {
-        message: `🚫 TABOO WORD USED: "${violated}" by ${socket.data.name}`
-      });
-      return;
-    }
+  const tabooWords = game.word.taboo.map(w => w.toLowerCase());
+  const actualWord = game.word.word.toLowerCase();
 
-    io.to(roomId).emit("clue", {
-      clue,
-      by: socket.data.name
+  // ❌ CHECK: actual word used
+  if (normalizedClue.includes(actualWord)) {
+    io.to(roomId).emit("system", {
+      message: `🚫 You cannot use the actual word in clues!`
     });
+    return;
+  }
+
+  // ❌ CHECK: taboo words used
+  const violated = tabooWords.find(taboo =>
+    normalizedClue.includes(taboo)
+  );
+
+  if (violated) {
+    io.to(roomId).emit("system", {
+      message: `🚫 TABOO WORD USED by ${socket.data.name}`
+    });
+    return;
+  }
+
+  io.to(roomId).emit("clue", {
+    clue,
+    by: socket.data.name
   });
+});
 
   // ---------------- GUESS ----------------
   socket.on("guess", ({ roomId, guess }) => {
