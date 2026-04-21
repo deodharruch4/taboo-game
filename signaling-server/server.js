@@ -11,7 +11,6 @@ const io = socketIo(server, {
 
 const words = require("../client/words.json");
 
-// ---------------- STATE ----------------
 let rooms = {};
 let gameState = {};
 
@@ -26,46 +25,34 @@ function emitRoomUpdate(roomId) {
   });
 }
 
-// ---------------- CONNECTION ----------------
+// ---------------- SOCKET ----------------
 io.on("connection", socket => {
 
-  // 👤 JOIN ROOM
   socket.on("join-room", ({ roomId, name }) => {
-
     socket.join(roomId);
     socket.data.name = name;
 
-    if (!rooms[roomId]) {
-      rooms[roomId] = { players: [] };
-    }
+    if (!rooms[roomId]) rooms[roomId] = { players: [] };
 
-    // avoid duplicate entries
     rooms[roomId].players =
       rooms[roomId].players.filter(p => p.id !== socket.id);
 
-    rooms[roomId].players.push({
-      id: socket.id,
-      name
-    });
+    rooms[roomId].players.push({ id: socket.id, name });
 
     emitRoomUpdate(roomId);
   });
 
-  // 🎮 START GAME (FIXED)
+  // ---------------- START GAME ----------------
   socket.on("start-game", roomId => {
-
     const room = rooms[roomId];
     if (!room || room.players.length < 2) return;
 
-    // 🚫 prevent start ONLY if active game exists
     const game = gameState[roomId];
-    if (game && !game.won) return;
+    if (game && !game.ended && !game.won) return;
 
     const roundId = Date.now();
-
     const word = words[Math.floor(Math.random() * words.length)];
 
-    // 🎯 stable speaker selection
     const speakerIndex = roundId % room.players.length;
     const speaker = room.players[speakerIndex];
 
@@ -73,7 +60,8 @@ io.on("connection", socket => {
       word,
       speakerId: speaker.id,
       roundId,
-      won: false
+      won: false,
+      ended: false
     };
 
     room.players.forEach(player => {
@@ -86,11 +74,10 @@ io.on("connection", socket => {
     });
   });
 
-  // 💡 CLUE (TABOO SAFE)
+  // ---------------- CLUE ----------------
   socket.on("clue", ({ roomId, clue }) => {
-
     const game = gameState[roomId];
-    if (!game || game.won) return;
+    if (!game || game.won || game.ended) return;
 
     const normalizedClue = clue.toLowerCase();
     const tabooWords = game.word.taboo.map(w => w.toLowerCase());
@@ -100,12 +87,10 @@ io.on("connection", socket => {
     );
 
     if (violated) {
-
       io.to(roomId).emit("system", {
         message: `🚫 TABOO WORD USED: "${violated}" by ${socket.data.name}`
       });
-
-      return; // ❌ DO NOT END GAME
+      return;
     }
 
     io.to(roomId).emit("clue", {
@@ -114,11 +99,10 @@ io.on("connection", socket => {
     });
   });
 
-  // 🤔 GUESS (SAFE)
+  // ---------------- GUESS ----------------
   socket.on("guess", ({ roomId, guess }) => {
-
     const game = gameState[roomId];
-    if (!game || game.won) return;
+    if (!game || game.won || game.ended) return;
 
     if (socket.id === game.speakerId) {
       io.to(socket.id).emit("system", {
@@ -129,14 +113,6 @@ io.on("connection", socket => {
 
     const normalizedGuess = guess.toLowerCase().trim();
     const word = game.word.word.toLowerCase();
-    const tabooWords = game.word.taboo.map(w => w.toLowerCase());
-
-    if (tabooWords.includes(normalizedGuess)) {
-      io.to(roomId).emit("system", {
-        message: `🚫 Taboo word guessed: "${guess}"`
-      });
-      return;
-    }
 
     io.to(roomId).emit("guess", {
       guess,
@@ -144,33 +120,42 @@ io.on("connection", socket => {
     });
 
     if (normalizedGuess === word) {
-
       game.won = true;
+      game.ended = true;
 
       io.to(roomId).emit("win", {
         winner: socket.data.name,
         roundId: game.roundId
       });
-
-      io.to(roomId).emit("system", {
-        message: `🎉 ${socket.data.name} guessed correctly!`
-      });
     }
   });
 
-  // 🔁 RESET GAME (FIXED CLEAN RESET)
+  // ---------------- TIMER END (LOSS FIX) ----------------
+  socket.on("timer-end", ({ roomId }) => {
+    const game = gameState[roomId];
+    if (!game || game.won || game.ended) return;
+
+    game.ended = true;
+
+    io.to(roomId).emit("lose", {
+      word: game.word,
+      roundId: game.roundId
+    });
+
+    io.to(roomId).emit("system", {
+      message: `⏱️ Time's up! Word was "${game.word.word}"`
+    });
+  });
+
+  // ---------------- RESET ----------------
   socket.on("reset-game", roomId => {
-
     gameState[roomId] = null;
-
     io.to(roomId).emit("reset-game");
   });
 
-  // 👋 DISCONNECT CLEANUP
+  // ---------------- DISCONNECT ----------------
   socket.on("disconnect", () => {
-
     for (let roomId in rooms) {
-
       rooms[roomId].players =
         rooms[roomId].players.filter(p => p.id !== socket.id);
 
