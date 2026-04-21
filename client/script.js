@@ -8,6 +8,13 @@ let timerInterval = null;
 let soundEnabled = true;
 window.gameEnded = false;
 
+// ================= SOUND UNLOCK (IMPORTANT FIX) =================
+// Unlocks audio on first user interaction (fixes Chrome autoplay issue)
+document.addEventListener("click", () => {
+  const unlock = new Audio();
+  unlock.play().catch(() => {});
+}, { once: true });
+
 // ================= CONNECTION =================
 socket.on("connect", () => {
   console.log("✅ Connected");
@@ -35,16 +42,23 @@ function startGame() {
   socket.emit("start-game", roomId);
 }
 
-// ================= SOUND =================
+// ================= SOUND TOGGLE =================
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById("soundBtn").innerText =
     soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
 }
 
+// 🔥 FIXED SOUND FUNCTION
 function playSound(url) {
   if (!soundEnabled) return;
-  new Audio(url).play().catch(() => {});
+
+  const audio = new Audio(url);
+  audio.volume = 1;
+
+  audio.play().catch(err => {
+    console.log("🔇 Sound blocked or failed:", err);
+  });
 }
 
 // ================= ROOM UPDATE =================
@@ -76,7 +90,6 @@ socket.on("game-start", ({ word, role, startTime, roundId }) => {
     document.getElementById("taboo").innerText = "Guess the word!";
   }
 
-  // UI toggle (safe check)
   const clueBox = document.getElementById("clueBox");
   const guessBox = document.getElementById("guessBox");
 
@@ -86,7 +99,7 @@ socket.on("game-start", ({ word, role, startTime, roundId }) => {
   startTimer(startTime);
 });
 
-// ================= TIMER (FIXED) =================
+// ================= TIMER =================
 function startTimer(startTime) {
 
   clearInterval(timerInterval);
@@ -146,7 +159,7 @@ function sendGuess() {
   input.value = "";
 }
 
-// ================= RECEIVE =================
+// ================= EVENTS =================
 socket.on("clue", ({ clue, by }) => {
   document.getElementById("currentClue").innerText = clue;
 
@@ -159,13 +172,11 @@ socket.on("guess", ({ guess, by }) => {
     `<li>🤔 ${by}: ${guess}</li>`;
 });
 
-// ================= SYSTEM EVENTS =================
 socket.on("system", ({ message }) => {
   document.getElementById("chat").innerHTML +=
     `<li style="color:#d97706;font-weight:bold">⚠️ ${message}</li>`;
 });
 
-// ================= TIMER STOP (SERVER SYNC) =================
 socket.on("timer-stop", () => {
   clearInterval(timerInterval);
   window.gameEnded = true;
@@ -185,8 +196,7 @@ socket.on("win", ({ winner, roundId }) => {
   document.getElementById("status").innerText =
     "🎉 WIN by " + winner;
 
-  const restartBtn = document.getElementById("restartBtn");
-  if (restartBtn) restartBtn.style.display = "block";
+  document.getElementById("restartBtn").style.display = "block";
 });
 
 // ================= RESTART =================
