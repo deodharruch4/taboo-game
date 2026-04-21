@@ -14,7 +14,6 @@ const words = require("../client/words.json");
 // ---------------- STATE ----------------
 let rooms = {};
 let gameState = {};
-let gameLock = {}; // 🔥 prevents multiple starts
 
 // ---------------- HELPERS ----------------
 function emitRoomUpdate(roomId) {
@@ -40,7 +39,7 @@ io.on("connection", socket => {
       rooms[roomId] = { players: [] };
     }
 
-    // remove duplicate entry
+    // avoid duplicate entries
     rooms[roomId].players =
       rooms[roomId].players.filter(p => p.id !== socket.id);
 
@@ -52,15 +51,15 @@ io.on("connection", socket => {
     emitRoomUpdate(roomId);
   });
 
-  // 🎮 START GAME (LOCKED + STABLE)
+  // 🎮 START GAME (FIXED)
   socket.on("start-game", roomId => {
 
     const room = rooms[roomId];
     if (!room || room.players.length < 2) return;
 
-    // 🚫 prevent multiple starts
-    if (gameLock[roomId]) return;
-    gameLock[roomId] = true;
+    // 🚫 prevent start ONLY if active game exists
+    const game = gameState[roomId];
+    if (game && !game.won) return;
 
     const roundId = Date.now();
 
@@ -87,45 +86,40 @@ io.on("connection", socket => {
     });
   });
 
-  // 💡 CLUE (TABOO CHECK)
+  // 💡 CLUE (TABOO SAFE)
   socket.on("clue", ({ roomId, clue }) => {
 
-  const game = gameState[roomId];
-  if (!game || game.won) return;
+    const game = gameState[roomId];
+    if (!game || game.won) return;
 
-  const normalizedClue = clue.toLowerCase();
-  const tabooWords = game.word.taboo.map(w => w.toLowerCase());
+    const normalizedClue = clue.toLowerCase();
+    const tabooWords = game.word.taboo.map(w => w.toLowerCase());
 
-  const violated = tabooWords.find(taboo =>
-    normalizedClue.includes(taboo)
-  );
+    const violated = tabooWords.find(taboo =>
+      normalizedClue.includes(taboo)
+    );
 
-  if (violated) {
+    if (violated) {
 
-    // 🚫 just warn — DO NOT END GAME
-    io.to(roomId).emit("system", {
-      message: `🚫 TABOO WORD USED: "${violated}" by ${socket.data.name}`
+      io.to(roomId).emit("system", {
+        message: `🚫 TABOO WORD USED: "${violated}" by ${socket.data.name}`
+      });
+
+      return; // ❌ DO NOT END GAME
+    }
+
+    io.to(roomId).emit("clue", {
+      clue,
+      by: socket.data.name
     });
-
-    // ❌ remove this line (IMPORTANT FIX)
-    // game.won = true;
-
-    return;
-  }
-
-  io.to(roomId).emit("clue", {
-    clue,
-    by: socket.data.name
   });
-});
 
-  // 🤔 GUESS (FULL SAFETY FIX)
+  // 🤔 GUESS (SAFE)
   socket.on("guess", ({ roomId, guess }) => {
 
     const game = gameState[roomId];
     if (!game || game.won) return;
 
-    // 🚫 speaker cannot guess
     if (socket.id === game.speakerId) {
       io.to(socket.id).emit("system", {
         message: "🚫 Speaker cannot guess!"
@@ -137,7 +131,6 @@ io.on("connection", socket => {
     const word = game.word.word.toLowerCase();
     const tabooWords = game.word.taboo.map(w => w.toLowerCase());
 
-    // 🚫 taboo guess check
     if (tabooWords.includes(normalizedGuess)) {
       io.to(roomId).emit("system", {
         message: `🚫 Taboo word guessed: "${guess}"`
@@ -150,7 +143,6 @@ io.on("connection", socket => {
       by: socket.data.name
     });
 
-    // 🏆 WIN CONDITION
     if (normalizedGuess === word) {
 
       game.won = true;
@@ -166,11 +158,10 @@ io.on("connection", socket => {
     }
   });
 
-  // 🔁 RESET GAME (CLEAN STATE)
+  // 🔁 RESET GAME (FIXED CLEAN RESET)
   socket.on("reset-game", roomId => {
 
     gameState[roomId] = null;
-    gameLock[roomId] = false;
 
     io.to(roomId).emit("reset-game");
   });
