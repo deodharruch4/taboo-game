@@ -90,31 +90,34 @@ io.on("connection", socket => {
   // 💡 CLUE (TABOO CHECK)
   socket.on("clue", ({ roomId, clue }) => {
 
-    const game = gameState[roomId];
-    if (!game || game.won) return;
+  const game = gameState[roomId];
+  if (!game || game.won) return;
 
-    const normalizedClue = clue.toLowerCase();
-    const tabooWords = game.word.taboo.map(w => w.toLowerCase());
+  const normalizedClue = clue.toLowerCase();
+  const tabooWords = game.word.taboo.map(w => w.toLowerCase());
 
-    const violated = tabooWords.find(taboo =>
-      normalizedClue.includes(taboo)
-    );
+  const violated = tabooWords.find(taboo =>
+    normalizedClue.includes(taboo)
+  );
 
-    if (violated) {
+  if (violated) {
 
-      io.to(roomId).emit("system", {
-        message: `🚫 TABOO VIOLATION by ${socket.data.name}! Used: "${violated}"`
-      });
-
-      game.won = true;
-      return;
-    }
-
-    io.to(roomId).emit("clue", {
-      clue,
-      by: socket.data.name
+    // 🚫 just warn — DO NOT END GAME
+    io.to(roomId).emit("system", {
+      message: `🚫 TABOO WORD USED: "${violated}" by ${socket.data.name}`
     });
+
+    // ❌ remove this line (IMPORTANT FIX)
+    // game.won = true;
+
+    return;
+  }
+
+  io.to(roomId).emit("clue", {
+    clue,
+    by: socket.data.name
   });
+});
 
   // 🤔 GUESS (FULL SAFETY FIX)
   socket.on("guess", ({ roomId, guess }) => {
