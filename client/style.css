@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
 * {
   box-sizing: border-box;
@@ -7,29 +7,16 @@
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #f8fafc, #e0f2fe, #fce7f3);
-  color: #1e293b;
+  background: #fdf2f8; /* soft pink */
+  color: #111;
   overflow: hidden;
-}
-
-/* soft texture */
-body::before {
-  content: "";
-  position: fixed;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px);
-  background-size: 40px 40px;
-  opacity: 0.3;
-  z-index: -1;
 }
 
 /* HEADER */
 header h1 {
   text-align: center;
-  font-size: 2.5rem;
-  color: #7c3aed;
-  letter-spacing: 1px;
+  color: #ec4899;
+  margin: 10px 0;
 }
 
 /* CONTAINER */
@@ -48,31 +35,27 @@ header h1 {
 
 /* INPUT */
 input {
-  padding: 10px;
+  padding: 14px;
   border-radius: 12px;
-  border: none;
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(10px);
-  color: #1e293b;
-  outline: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 2px solid #a7f3d0;
+  background: white;
+  font-size: 15px;
 }
 
 /* BUTTON */
 button {
-  padding: 10px 15px;
+  padding: 14px 20px;
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  background: linear-gradient(135deg,#c4b5fd,#a7f3d0);
-  color: #1e293b;
-  font-weight: 500;
-  transition: all 0.25s ease;
+  background: #34d399; /* green */
+  color: black;
+  font-weight: 600;
+  font-size: 15px;
 }
 
 button:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  background: #10b981;
 }
 
 /* MAIN */
@@ -80,7 +63,6 @@ button:hover {
   display: flex;
   gap: 20px;
   flex: 1;
-  overflow: hidden;
 }
 
 /* LEFT */
@@ -96,28 +78,41 @@ button:hover {
   flex: 1;
   max-width: 350px;
   min-width: 350px;
-  display: flex;
-  flex-direction: column;
 }
 
 /* CARD */
 .card {
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,0.4);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  background: white;
+  border-radius: 16px;
+  padding: 15px;
+  border: 2px solid #fbcfe8;
 }
 
-/* GLOW */
-.glow {
-  box-shadow: 0 0 25px rgba(196,181,253,0.6);
+/* STATUS + TIMER ROW */
+.status-row {
+  display: flex;
+  gap: 10px;
+}
+
+.status-box {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  background: #fbcfe8;
+  border-radius: 12px;
+}
+
+.timer-box {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  background: #a7f3d0;
+  border-radius: 12px;
 }
 
 /* WORD */
 #word {
-  font-size: 2.2rem;
+  font-size: 2rem;
   text-align: center;
   color: #10b981;
 }
@@ -128,61 +123,38 @@ button:hover {
   color: #ef4444;
 }
 
-/* TIMER */
-#timer {
-  font-size: 2rem;
-  text-align: center;
-  color: #7c3aed;
-  font-weight: bold;
-}
-
 /* CURRENT CLUE */
 #currentClue {
+  font-size: 1.5rem;
   text-align: center;
-  font-size: 1.6rem;
-  color: #0ea5e9;
+  color: #ec4899;
   font-weight: 600;
+}
+
+/* BIG INPUT ROW */
+.inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.inputs input {
+  flex: 1;
+  font-size: 16px;
+}
+
+.inputs button {
+  width: 120px;
 }
 
 /* CHAT */
 #chat {
   list-style: none;
   padding: 0;
-  margin: 0;
-  flex: 1;
+  max-height: 400px;
   overflow-y: auto;
 }
 
 #chat li {
-  padding: 8px;
-  border-radius: 10px;
-  margin-bottom: 5px;
-  background: rgba(255,255,255,0.5);
-}
-
-/* INPUT ROW */
-.inputs {
-  display: flex;
-  gap: 10px;
-}
-
-/* SCROLLBAR (cute pastel) */
-#chat::-webkit-scrollbar {
-  width: 6px;
-}
-#chat::-webkit-scrollbar-thumb {
-  background: #c4b5fd;
-  border-radius: 10px;
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-  .main {
-    flex-direction: column;
-  }
-
-  .right {
-    max-width: 100%;
-    min-width: 100%;
-  }
+  padding: 6px;
+  border-bottom: 1px solid #eee;
 }
