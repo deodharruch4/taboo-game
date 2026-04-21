@@ -26,7 +26,7 @@ function emitRoomUpdate(roomId) {
   });
 }
 
-// ---------------- CONNECTION ----------------
+// ---------------- CONNECTION --------------
 io.on("connection", socket => {
 
   // 👤 JOIN ROOM
