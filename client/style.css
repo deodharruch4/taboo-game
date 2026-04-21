@@ -7,19 +7,20 @@
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background: radial-gradient(circle at top, #0f172a, #020617);
-  color: white;
-  overflow: hidden; /* 🔥 prevents page movement */
+  background: linear-gradient(135deg, #f8fafc, #e0f2fe, #fce7f3);
+  color: #1e293b;
+  overflow: hidden;
 }
 
-/* texture */
+/* soft texture */
 body::before {
   content: "";
   position: fixed;
   width: 200%;
   height: 200%;
-  background: url("https://www.transparenttextures.com/patterns/stardust.png");
-  opacity: 0.07;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
   z-index: -1;
 }
 
@@ -27,10 +28,8 @@ body::before {
 header h1 {
   text-align: center;
   font-size: 2.5rem;
-  background: linear-gradient(90deg,#22c55e,#06b6d4,#a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 10px 0;
+  color: #7c3aed;
+  letter-spacing: 1px;
 }
 
 /* CONTAINER */
@@ -47,79 +46,80 @@ header h1 {
   margin-bottom: 10px;
 }
 
-/* INPUTS */
+/* INPUT */
 input {
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
-  background: rgba(255,255,255,0.1);
-  color: white;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(10px);
+  color: #1e293b;
   outline: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* BUTTONS */
+/* BUTTON */
 button {
   padding: 10px 15px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
-  background: linear-gradient(135deg,#6366f1,#a855f7);
-  color: white;
-  transition: 0.3s;
+  background: linear-gradient(135deg,#c4b5fd,#a7f3d0);
+  color: #1e293b;
+  font-weight: 500;
+  transition: all 0.25s ease;
 }
 
 button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px #a855f7;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
 }
 
-/* MAIN LAYOUT (FIXED) */
+/* MAIN */
 .main {
   display: flex;
   gap: 20px;
   flex: 1;
-  height: calc(100vh - 140px);
-  overflow: hidden; /* 🔥 stops movement */
+  overflow: hidden;
 }
 
-/* LEFT SIDE */
+/* LEFT */
 .left {
   flex: 2;
   display: flex;
   flex-direction: column;
   gap: 15px;
-  overflow: hidden;
 }
 
-/* RIGHT SIDE (LOCKED WIDTH) */
+/* RIGHT */
 .right {
   flex: 1;
-  min-width: 350px;
   max-width: 350px;
+  min-width: 350px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
-/* CARD UI */
+/* CARD */
 .card {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.6);
   backdrop-filter: blur(20px);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 18px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.4);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
 }
 
-/* glow card */
+/* GLOW */
 .glow {
-  box-shadow: 0 0 25px rgba(99,102,241,0.4);
+  box-shadow: 0 0 25px rgba(196,181,253,0.6);
 }
 
 /* WORD */
 #word {
-  font-size: 2rem;
+  font-size: 2.2rem;
   text-align: center;
-  color: #22c55e;
+  color: #10b981;
 }
 
 /* TABOO */
@@ -128,49 +128,54 @@ button:hover {
   color: #ef4444;
 }
 
-/* TIMER (NO SHIFTING) */
+/* TIMER */
 #timer {
   font-size: 2rem;
   text-align: center;
-  color: #facc15;
-  animation: pulse 1s infinite;
-  width: 80px;
-  margin: 0 auto;
-}
-
-@keyframes pulse {
-  50% { transform: scale(1.1); }
+  color: #7c3aed;
+  font-weight: bold;
 }
 
 /* CURRENT CLUE */
 #currentClue {
   text-align: center;
-  font-size: 1.5rem;
-  color: #22c55e;
+  font-size: 1.6rem;
+  color: #0ea5e9;
+  font-weight: 600;
 }
 
-/* CHAT FIX (IMPORTANT) */
+/* CHAT */
 #chat {
   list-style: none;
   padding: 0;
   margin: 0;
   flex: 1;
-  overflow-y: auto;   /* 🔥 scroll instead of pushing UI */
-  max-height: 100%;
+  overflow-y: auto;
 }
 
 #chat li {
-  padding: 5px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 8px;
+  border-radius: 10px;
+  margin-bottom: 5px;
+  background: rgba(255,255,255,0.5);
 }
 
-/* INPUT ROWS */
+/* INPUT ROW */
 .inputs {
   display: flex;
   gap: 10px;
 }
 
-/* RESPONSIVE */
+/* SCROLLBAR (cute pastel) */
+#chat::-webkit-scrollbar {
+  width: 6px;
+}
+#chat::-webkit-scrollbar-thumb {
+  background: #c4b5fd;
+  border-radius: 10px;
+}
+
+/* MOBILE */
 @media (max-width: 768px) {
   .main {
     flex-direction: column;
@@ -179,6 +184,5 @@ button:hover {
   .right {
     max-width: 100%;
     min-width: 100%;
-    height: 40%;
   }
 }

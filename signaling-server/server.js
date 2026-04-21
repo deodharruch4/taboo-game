@@ -84,35 +84,82 @@ io.on("connection", socket => {
     });
   });
 
-  // 💡 CLUE
-  socket.on("clue", ({ roomId, clue }) => {
-    io.to(roomId).emit("clue", {
-      clue,
-      by: socket.data.name
+  // 💡 CLUE (WITH TABOO CHECK)
+socket.on("clue", ({ roomId, clue }) => {
+
+  const game = gameState[roomId];
+  if (!game || game.won) return;
+
+  const normalizedClue = clue.toLowerCase();
+  const tabooWords = game.word.taboo.map(w => w.toLowerCase());
+
+  const violated = tabooWords.find(taboo =>
+    normalizedClue.includes(taboo)
+  );
+
+  if (violated) {
+
+    io.to(roomId).emit("system", {
+      message: `🚫 TABOO VIOLATION by ${socket.data.name}! Used: "${violated}"`
     });
+
+    game.won = true; // end round
+    return;
+  }
+
+  io.to(roomId).emit("clue", {
+    clue,
+    by: socket.data.name
+  });
+});
+
+ // 🤔 GUESS + TABOO + ROLE CHECK + WIN
+socket.on("guess", ({ roomId, guess }) => {
+
+  const game = gameState[roomId];
+  if (!game || game.won) return;
+
+  // 🚫 PREVENT SPEAKER FROM GUESSING (IMPORTANT)
+  if (socket.id === game.speakerId) {
+    io.to(socket.id).emit("system", {
+      message: "🚫 Speaker cannot guess!"
+    });
+    return;
+  }
+
+  const normalizedGuess = guess.toLowerCase().trim();
+  const word = game.word.word.toLowerCase();
+  const tabooWords = game.word.taboo.map(w => w.toLowerCase());
+
+  // 🚫 TABOO WORD CHECK (optional but good)
+  if (tabooWords.includes(normalizedGuess)) {
+    io.to(roomId).emit("system", {
+      message: `🚫 Taboo word guessed: "${guess}"`
+    });
+    return;
+  }
+
+  // 📤 SEND GUESS TO CHAT
+  io.to(roomId).emit("guess", {
+    guess,
+    by: socket.data.name
   });
 
-  // 🤔 GUESS + WIN LOCK
-  socket.on("guess", ({ roomId, guess }) => {
+  // 🏆 WIN CONDITION
+  if (normalizedGuess === word) {
 
-    const game = gameState[roomId];
-    if (!game || game.won) return;
+    game.won = true;
 
-    io.to(roomId).emit("guess", {
-      guess,
-      by: socket.data.name
+    io.to(roomId).emit("win", {
+      winner: socket.data.name,
+      roundId: game.roundId
     });
 
-    if (guess.toLowerCase() === game.word.word.toLowerCase()) {
-
-      game.won = true;
-
-      io.to(roomId).emit("win", {
-        winner: socket.data.name,
-        roundId: game.roundId
-      });
-    }
-  });
+    io.to(roomId).emit("system", {
+      message: `🎉 ${socket.data.name} guessed correctly!`
+    });
+  }
+});
 
   // 🔁 RESET
   socket.on("reset-game", roomId => {
