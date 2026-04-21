@@ -48,7 +48,6 @@ function toggleSound() {
 
 function playSound(url) {
   if (!soundEnabled) return;
-
   const audio = new Audio(url);
   audio.play().catch(() => {});
 }
@@ -155,7 +154,7 @@ socket.on("system", ({ message }) => {
     `<li style="color:#d97706;font-weight:bold">⚠️ ${message}</li>`;
 });
 
-// ---------------- WIN ----------------
+// ---------------- WIN (🔥 CONFETTI FIXED) ----------------
 socket.on("win", ({ winner }) => {
 
   window.gameEnded = true;
@@ -163,6 +162,11 @@ socket.on("win", ({ winner }) => {
 
   document.getElementById("status").innerText = "🎉 WIN by " + winner;
   document.getElementById("restartBtn").style.display = "block";
+
+  // ✅ RESTORED CONFETTI
+  if (typeof confetti === "function") {
+    confetti();
+  }
 
   playSound("https://www.soundjay.com/buttons/sounds/button-3.mp3");
 });
